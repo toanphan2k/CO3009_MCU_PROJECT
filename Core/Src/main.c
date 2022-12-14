@@ -42,6 +42,8 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim3;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -50,25 +52,52 @@ TIM_HandleTypeDef htim3;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int signal = 1;
-int i = 0;
-int beep[3] = {1,0,1};
-void buzzer_sound(){
-	  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,i*beep[i%3]);
-	  if (i >= 950){
-		  signal = -1;
-	  }
-	  if (i <= 50){
-		  signal = 1;
-	  }
-	  i += 50*signal;
-}
+//int signal = 1;
+//uint8_t i = 0;
+//uint16_t beep[3] = {1,1,1};
+//int butterfly[72] = {
+//		NOTE_C6, NOTE_C6, NOTE_D6,NOTE_D6, NOTE_E6 ,NOTE_E6, NOTE_C6, NOTE_C6,
+//		NOTE_C6,NOTE_C6, NOTE_D6,NOTE_D6, NOTE_E6 ,NOTE_E6, NOTE_C6, 0,
+//		NOTE_E6, NOTE_E6, NOTE_F6, NOTE_F6, NOTE_G6,  NOTE_G6, NOTE_G6, NOTE_G6,
+//		NOTE_E6, NOTE_E6, NOTE_F6, NOTE_F6, NOTE_G6,  NOTE_G6, NOTE_G6, NOTE_G6,
+//		NOTE_G6, NOTE_A6, NOTE_G6, NOTE_F6, NOTE_E6,NOTE_E6, NOTE_C6,NOTE_C6,
+//		NOTE_G6, NOTE_A6, NOTE_G6, NOTE_F6, NOTE_E6,NOTE_E6, NOTE_C6,0,
+//		NOTE_C6,NOTE_C6,NOTE_G6,NOTE_G6,NOTE_C6,NOTE_C6,NOTE_C6,0,
+//		NOTE_C6,NOTE_C6,NOTE_G6,NOTE_G6,NOTE_C6,NOTE_C6,NOTE_C6,0,
+//};
+//int dio[72] = {
+//		NOTE_FS5,NOTE_FS5,0,NOTE_D5,NOTE_D5,0, //6
+//		NOTE_D5,NOTE_E5,NOTE_F5,0,	//4
+//		NOTE_E5,NOTE_D5,NOTE_CS5,NOTE_D5,//4
+//		NOTE_E5,NOTE_FS5,NOTE_FS5,0, //4
+//		NOTE_B5,NOTE_B5,0,NOTE_B4, //4
+//		NOTE_CS5,NOTE_D5,0, NOTE_E5, //4
+//		NOTE_D5, NOTE_CS5, 0, NOTE_A5, NOTE_G5,//6
+//		//----------------------
+//		NOTE_FS5,NOTE_FS5,0,NOTE_D5,NOTE_D5,0, //6
+//		NOTE_D5,NOTE_E5,NOTE_F5,0,	//4
+//		NOTE_E5,NOTE_D5,NOTE_CS5,NOTE_D5,//4
+//		NOTE_E5,NOTE_FS5,NOTE_FS5,0, //4
+//		NOTE_B5,NOTE_B5,0,NOTE_B5, //4
+//		NOTE_CS6,NOTE_D6,0, NOTE_G5, //4
+//		NOTE_FS5, NOTE_F5, NOTE_D6 , NOTE_AS5, NOTE_B5//6
+//};
+//uint32_t scale = 0;
+//
+//void buzzer_sound(){
+//	// PSC + 1 => Hz - 31.5
+//	//TIM_CCxChannelCmd(&htim3, TIM_CHANNEL_1, TIM_CCx_ENABLE);
+//	__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,15 + beep[i%3]);
+//	TIM3->PSC = 64000/dio[i%72];// melody[i%3];
+//	i++;
+//}
 /* USER CODE END 0 */
 
 /**
@@ -100,16 +129,21 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM3_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  buzzer_init(TIM3);
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  buzzer_sound();
-	  HAL_Delay(100);
+	  buzzer_sound(htim3, 50);
+	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_9);
+	  HAL_Delay(300);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -210,6 +244,39 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 
